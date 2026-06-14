@@ -353,3 +353,78 @@ elif modulos == "Carga y perfil del dataset":
                     "Verifique que los datasets de ejemplo estén dentro de la carpeta "
                     "'data/' del proyecto, o utilice la opción de subir su propio archivo."
                 )
+
+# --------------------------------------------------
+    # VISTA PREVIA Y PERFIL DEL DATASET CARGADO
+    # --------------------------------------------------
+    if st.session_state.data is not None:
+
+        data = st.session_state.data
+
+        st.write(f"Archivo actual: **{st.session_state.nombre_archivo}**")
+
+        st.subheader("Vista previa del dataset")
+        st.dataframe(data.head(10))
+
+        st.subheader("Perfil básico del dataset")
+
+        # Detectamos los tipos de columnas para mostrar métricas rápidas
+        columnas_numericas = obtener_columnas_numericas(data)
+        columnas_categoricas = obtener_columnas_categoricas(data)
+        columnas_fecha = obtener_columnas_fecha(data)
+
+        # ---- Métricas rápidas ----
+        col1, col2, col3 = st.columns(3)
+        col1.metric("Filas", data.shape[0])
+        col2.metric("Columnas", data.shape[1])
+        col3.metric("Filas duplicadas", int(data.duplicated().sum()))
+
+        col4, col5, col6 = st.columns(3)
+        col4.metric("Columnas numéricas", len(columnas_numericas))
+        col5.metric("Columnas categóricas", len(columnas_categoricas))
+        col6.metric("Valores nulos totales", int(data.isnull().sum().sum()))
+
+        # Nombres de columnas
+        st.write("Columnas del dataset:")
+        st.write(data.columns.tolist())
+
+        # Tipos de datos
+        st.write("Tipos de datos:")
+        st.write(data.dtypes)
+
+        # Valores nulos
+        st.write("Valores nulos por columna:")
+        st.write(data.isnull().sum())
+
+        # Estadística descriptiva
+        st.write("Estadística descriptiva:")
+        st.write(data.describe())
+
+        # ---- Selección de columnas relevantes ----
+        st.subheader("Selección de columnas relevantes")
+        columnas_seleccionadas = st.multiselect(
+            "Seleccione columnas para revisar en detalle (opcional)",
+            data.columns.tolist()
+        )
+
+        if columnas_seleccionadas:
+            st.dataframe(data[columnas_seleccionadas].head(10))
+
+        # ---- Mensajes según los tipos de variables encontrados ----
+        if not columnas_numericas:
+            st.warning("El dataset no contiene columnas numéricas.")
+
+        if not columnas_categoricas:
+            st.info("El dataset no contiene columnas categóricas.")
+
+        if not columnas_fecha:
+            st.info("No se detectaron columnas de fecha en este dataset.")
+
+        # Botón para eliminar el dataset cargado
+        if st.button("Eliminar dataset cargado"):
+            st.session_state.data = None
+            st.session_state.nombre_archivo = None
+            st.rerun()
+
+    else:
+        st.write("Por favor cargue su archivo.")
