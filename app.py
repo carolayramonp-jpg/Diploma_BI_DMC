@@ -428,3 +428,67 @@ elif modulos == "Carga y perfil del dataset":
 
     else:
         st.write("Por favor cargue su archivo.")
+
+# ==============================
+# MÓDULO PROCESAMIENTO DE DATOS
+# ==============================
+
+elif modulos == "Procesamiento de datos":
+
+    st.subheader("Procesamiento de datos")
+
+    if st.session_state.data is not None:
+
+        # Aplicamos la conversión de columnas de fecha (errors="coerce")
+        data = convertir_columnas_fecha(st.session_state.data)
+
+        st.write("Dataset disponible para procesamiento:")
+        st.dataframe(data.head(10))
+
+        # --------------------------------------------------
+        # Clasificación automática de variables
+        # --------------------------------------------------
+        st.markdown("### Clasificación automática de variables")
+
+        columnas_numericas = obtener_columnas_numericas(data)
+        columnas_categoricas = obtener_columnas_categoricas(data)
+        columnas_fecha = obtener_columnas_fecha(data)
+        columnas_binarias = obtener_columnas_binarias(data)
+
+        col1, col2 = st.columns(2)
+
+        with col1:
+            st.write("**Columnas numéricas:**")
+            st.write(columnas_numericas if columnas_numericas else "Ninguna")
+
+            st.write("**Columnas de fecha:**")
+            st.write(columnas_fecha if columnas_fecha else "Ninguna")
+
+        with col2:
+            st.write("**Columnas categóricas:**")
+            st.write(columnas_categoricas if columnas_categoricas else "Ninguna")
+
+            st.write("**Columnas binarias (2 valores únicos):**")
+            st.write(columnas_binarias if columnas_binarias else "Ninguna")
+
+        if not columnas_numericas:
+            st.warning("No se detectaron columnas numéricas en este dataset.")
+
+        if not columnas_categoricas:
+            st.info("No se detectaron columnas categóricas en este dataset.")
+
+        # --------------------------------------------------
+        # Conversión de columnas de fecha
+        # --------------------------------------------------
+        st.markdown("### Conversión de columnas de fecha")
+
+        if columnas_fecha:
+            st.success(
+                "Las siguientes columnas fueron identificadas y convertidas a "
+                f"formato fecha: {', '.join(columnas_fecha)}"
+            )
+            # Guardamos el dataset con las fechas ya convertidas para que
+            # los demás módulos (por ejemplo, Análisis visual) las reutilicen.
+            st.session_state.data = data
+        else:
+            st.info("No se encontraron columnas que parezcan ser de tipo fecha.")
