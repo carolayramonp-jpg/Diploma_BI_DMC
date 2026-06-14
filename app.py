@@ -273,3 +273,83 @@ if modulos == "Home":
         st.success(f"Dataset cargado: {st.session_state.nombre_archivo}")
     else:
         st.info("Aún no se ha cargado ningún dataset.")
+
+# ==============================
+# MÓDULO CARGA Y PERFIL
+# ==============================
+
+elif modulos == "Carga y perfil del dataset":
+
+    st.subheader("Carga y perfil del dataset")
+
+    # ---- El usuario elige cómo quiere cargar los datos ----
+    origen_datos = st.radio(
+        "¿Cómo desea cargar el dataset?",
+        ["Subir archivo (CSV o Excel)", "Usar un dataset de ejemplo del proyecto"]
+    )
+
+    # --------------------------------------------------
+    # OPCIÓN 1: Subida de archivo propio
+    # --------------------------------------------------
+    if origen_datos == "Subir archivo (CSV o Excel)":
+
+        # Creamos un cargador de archivos para subir archivos Excel o CSV
+        archivo = st.file_uploader(
+            "Cargue el archivo Excel o CSV",
+            type=["csv", "xlsx"]
+        )
+
+        # Validamos si el usuario cargó un archivo
+        if archivo is not None:
+
+            # Guardamos el nombre del archivo en session_state
+            st.session_state.nombre_archivo = archivo.name
+
+            df_cargado = None
+
+            # Validamos si el archivo cargado tiene extensión .csv
+            if archivo.name.endswith(".csv"):
+                df_cargado = cargar_csv(archivo)
+
+            # Validamos si el archivo cargado tiene extensión .xlsx
+            elif archivo.name.endswith(".xlsx"):
+                df_cargado = cargar_excel(archivo)
+
+            # Si el archivo no es CSV ni Excel, mostramos un mensaje de error
+            else:
+                st.error("Formato no válido")
+
+            if df_cargado is not None:
+                # Estandarizamos los nombres de columnas antes de guardarlo
+                st.session_state.data = estandarizar_columnas(df_cargado)
+
+                # Confirmamos que el archivo fue cargado
+                st.success("Archivo cargado correctamente")
+
+    # --------------------------------------------------
+    # OPCIÓN 2: Datasets de ejemplo del proyecto
+    # --------------------------------------------------
+    else:
+
+        dataset_elegido = st.selectbox(
+            "Seleccione un dataset de ejemplo",
+            list(DATASETS_EJEMPLO.keys())
+        )
+
+        if st.button("Cargar dataset seleccionado"):
+
+            ruta = DATASETS_EJEMPLO[dataset_elegido]
+
+            # Verificamos que el archivo exista antes de intentar leerlo,
+            # para que la app no se detenga si la carpeta "data/" no está disponible.
+            if os.path.exists(ruta):
+                df_cargado = cargar_csv_local(ruta)
+                st.session_state.data = estandarizar_columnas(df_cargado)
+                st.session_state.nombre_archivo = os.path.basename(ruta)
+                st.success("Dataset cargado correctamente")
+            else:
+                st.error(
+                    f"No se encontró el archivo '{ruta}'. "
+                    "Verifique que los datasets de ejemplo estén dentro de la carpeta "
+                    "'data/' del proyecto, o utilice la opción de subir su propio archivo."
+                )
